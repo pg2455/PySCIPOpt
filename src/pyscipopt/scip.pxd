@@ -32,11 +32,6 @@ cdef extern from "scip/scip.h":
         SCIP_OBJSENSE_MAXIMIZE = -1
         SCIP_OBJSENSE_MINIMIZE =  1
 
-    # This version is used in LPI.
-    ctypedef enum SCIP_OBJSEN:
-        SCIP_OBJSEN_MAXIMIZE = -1
-        SCIP_OBJSEN_MINIMIZE =  1
-
     ctypedef enum SCIP_BOUNDTYPE:
         SCIP_BOUNDTYPE_LOWER = 0
         SCIP_BOUNDTYPE_UPPER = 1
@@ -281,9 +276,6 @@ cdef extern from "scip/scip.h":
     ctypedef struct SCIP_ROW:
         pass
 
-    ctypedef struct SCIP_NLROW:
-        pass
-
     ctypedef struct SCIP_COL:
         pass
 
@@ -451,11 +443,6 @@ cdef extern from "scip/scip.h":
         SCIP_VAR* var2
         SCIP_Real coef
 
-    ctypedef struct SCIP_QUADELEM:
-        int idx1
-        int idx2
-        SCIP_Real coef
-
     ctypedef void (*messagecallback) (SCIP_MESSAGEHDLR *messagehdlr, FILE *file, const char *msg)
     ctypedef void (*errormessagecallback) (void *data, FILE *file, const char *msg)
     ctypedef SCIP_RETCODE (*messagehdlrfree) (SCIP_MESSAGEHDLR *messagehdlr)
@@ -580,7 +567,7 @@ cdef extern from "scip/scip.h":
     SCIP_RETCODE SCIPsetObjsense(SCIP* scip, SCIP_OBJSENSE objsense)
     SCIP_OBJSENSE SCIPgetObjsense(SCIP* scip)
     SCIP_RETCODE SCIPsetObjlimit(SCIP* scip, SCIP_Real objlimit)
-    SCIP_Real SCIPgetObjlimit(SCIP* scip)
+    SCIP_RETCODE SCIPgetObjlimit(SCIP* scip)
     SCIP_RETCODE SCIPaddObjoffset(SCIP* scip, SCIP_Real addval)
     SCIP_RETCODE SCIPaddOrigObjoffset(SCIP* scip, SCIP_Real addval)
     SCIP_Real SCIPgetOrigObjoffset(SCIP* scip)
@@ -1140,7 +1127,7 @@ cdef extern from "scip/scip.h":
 
     # LPI Functions
     SCIP_RETCODE SCIPgetLPI(SCIP* scip, SCIP_LPI** lpi)
-    SCIP_RETCODE SCIPlpiCreate(SCIP_LPI** lpi, SCIP_MESSAGEHDLR* messagehdlr, const char* name, SCIP_OBJSEN objsen)
+    SCIP_RETCODE SCIPlpiCreate(SCIP_LPI** lpi, SCIP_MESSAGEHDLR* messagehdlr, const char* name, SCIP_OBJSENSE objsen)
     SCIP_RETCODE SCIPlpiFree(SCIP_LPI** lpi)
     SCIP_RETCODE SCIPlpiWriteLP(SCIP_LPI* lpi, const char* fname)
     SCIP_RETCODE SCIPlpiReadLP(SCIP_LPI* lpi, const char* fname)
@@ -1173,11 +1160,15 @@ cdef extern from "scip/scip.h":
     SCIP_Bool    SCIPlpiIsPrimalFeasible(SCIP_LPI* lpi)
     SCIP_Bool    SCIPlpiIsDualFeasible(SCIP_LPI* lpi)
 
-    #re-optimization routines
+    #re-optimization routinesSCIPgetCurrentNode
     SCIP_RETCODE SCIPfreeReoptSolve(SCIP* scip)
     SCIP_RETCODE SCIPchgReoptObjective(SCIP* scip, SCIP_OBJSENSE objsense, SCIP_VAR** vars, SCIP_Real* coefs, int nvars)
 
     BMS_BLKMEM* SCIPblkmem(SCIP* scip)
+
+    ##### Gaptest
+    SCIP_NODE* SCIPgetFocusNode(SCIP* scip)
+    SCIP_RETCODE SCIPgetChildren(SCIP* scip, SCIP_NODE*** children, int* nchildren)
 
 cdef extern from "scip/tree.h":
     int SCIPnodeGetNAddedConss(SCIP_NODE* node)
@@ -1407,27 +1398,6 @@ cdef extern from "scip/pub_nlp.h":
                                      int nvars,
                                      SCIP_VAR** vars)
 
-
-    SCIP_Real SCIPnlrowGetConstant(SCIP_NLROW* nlrow)
-    int SCIPnlrowGetNLinearVars(SCIP_NLROW* nlrow)
-    SCIP_VAR** SCIPnlrowGetLinearVars(SCIP_NLROW* nlrow)
-    SCIP_Real* SCIPnlrowGetLinearCoefs(SCIP_NLROW* nlrow)
-    void SCIPnlrowGetQuadData(SCIP_NLROW* nlrow,
-                              int* nquadvars,
-                              SCIP_VAR*** quadvars,
-                              int* nquadelems,
-                              SCIP_QUADELEM** quadelems)
-    SCIP_EXPRTREE* SCIPnlrowGetExprtree(SCIP_NLROW* nlrow)
-    SCIP_Real SCIPnlrowGetLhs(SCIP_NLROW* nlrow)
-    SCIP_Real SCIPnlrowGetRhs(SCIP_NLROW* nlrow)
-    const char* SCIPnlrowGetName(SCIP_NLROW* nlrow)
-    SCIP_Real SCIPnlrowGetDualsol(SCIP_NLROW* nlrow)
-
-cdef extern from "scip/scip_nlp.h":
-    SCIP_Bool SCIPisNLPConstructed(SCIP* scip)
-    SCIP_NLROW** SCIPgetNLPNlRows(SCIP* scip)
-    int SCIPgetNNLPNlRows(SCIP* scip)
-
 cdef extern from "scip/cons_nonlinear.h":
     SCIP_RETCODE SCIPcreateConsNonlinear(SCIP* scip,
                                          SCIP_CONS** cons,
@@ -1544,3 +1514,10 @@ cdef extern from "scip/pub_lp.h":
     SCIP_Real SCIPcolGetPrimsol(SCIP_COL* col)
     SCIP_Real SCIPcolGetLb(SCIP_COL* col)
     SCIP_Real SCIPcolGetUb(SCIP_COL* col)
+
+
+    ## Gaptest
+    SCIP_RETCODE SCIPgetLeaves	(	SCIP * 	scip, SCIP_NODE *** 	leaves, int * 	nleaves)
+    SCIP_RETCODE SCIPgetChildren	(	SCIP * 	scip, SCIP_NODE *** 	children, int * 	nchildren )
+    SCIP_RETCODE SCIPgetSiblings	(	SCIP * 	scip, SCIP_NODE *** 	siblings, int * 	nsiblings )		
+    SCIP_NODE* SCIPgetBestboundNode(SCIP* scip)
